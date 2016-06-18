@@ -1,0 +1,9 @@
+alias meaning
+tbs     mean time between sessions since activation date
+tsls    time since last session
+tsad    time since activation date
+ttp     total time played
+ls_date last session date
+revenue total gasto pelo usuario
+completed porcentagem do jogo completa
+completed_post porcentagem do jogo completa após 2 dias

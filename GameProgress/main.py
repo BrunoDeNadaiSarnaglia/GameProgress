@@ -9,11 +9,15 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model, decomposition, datasets
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
+from Data.LoadTrainingData import TrainingData
 
 logistic = linear_model.LogisticRegression()
 
 pca = decomposition.PCA()
 pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
+
+data = TrainingData()
+data.get()
 
 digits = datasets.load_digits()
 X_digits = digits.data
