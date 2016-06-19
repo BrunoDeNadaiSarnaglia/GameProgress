@@ -18,6 +18,7 @@ from Data.LoadTrainingData import TrainingData
 from sklearn import linear_model, decomposition, datasets
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import precision_score
 
 def main():
     file = TrainingData()
@@ -64,45 +65,21 @@ def main():
         ('ClassY', ClassYTransformer())
     ])
     pipelineFit = Pipeline([
+        ('pca', decomposition.PCA()),
         ('logistic', linear_model.LogisticRegression())
     ])
     X = pipelineX.transform(D)
     y = pipelineY.transform(D)
-    n_components = [20, 40, 64]
+    n_components = [2, 4, 6, 8, 10, 12]
     Cs = numpy.logspace(-4, 4, 3)
 
     estimator = GridSearchCV(pipelineFit,
-                             dict(pca__n_components=n_components,
-                                  logistic__C=Cs))
-    estimator.fit(X, y)
-    print estimator.best_estimator_.score
+                             dict(pca__n_components=n_components, logistic__C=Cs))
+    estimator.fit(X.values, y[0].values)
+    print estimator.best_estimator_.score(X, y)
+    y_pred = estimator.best_estimator_.predict(X)
+    print precision_score(y[0].values, y_pred)
 
 
 main()
-
-
-logistic = linear_model.LogisticRegression()
-
-pca = decomposition.PCA()
-pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
-
-digits = datasets.load_digits()
-X_digits = digits.data
-print X_digits
-y_digits = digits.target
-
-# ##############################################################################
-# Plot the PCA spectrum
-pca.fit(X_digits)
-
-###############################################################################
-# Prediction
-
-n_components = [20, 40, 64]
-Cs = numpy.logspace(-4, 4, 3)
-
-estimator = GridSearchCV(pipe,
-                         dict(pca__n_components=n_components,
-                              logistic__C=Cs))
-estimator.fit(X_digits, y_digits)
 
