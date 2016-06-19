@@ -19,12 +19,12 @@ class ElasticNetRegression(TransformerMixin):
             ('pca', decomposition.PCA()),
             ('elasticNet', ElasticNet(normalize=True))
         ])
-        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], elasticNet__alpha=numpy.logspace(-1, 4, 1)), scoring='r2')
+        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], elasticNet__alpha=numpy.logspace(-1, 1, 4)), scoring='r2')
         grid_search.fit(X, y)
         acc = grid_search.best_score_
         print grid_search.best_params_
         print grid_search.grid_scores_
-        print "accuracy: " + str(acc)
+        print "r2: " + str(acc)
         return self
 
     def transform(self, X, **transform_params):

@@ -20,12 +20,12 @@ class PassiveAggressiveRegression(TransformerMixin):
             ('pca', decomposition.PCA()),
             ('passiveAggressive', PassiveAggressiveRegressor())
         ])
-        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], passiveAggressive__C=numpy.logspace(0, 4, 2), passiveAggressive__loss=['epsilon_insensitive', 'squared_epsilon_insensitive']), scoring='r2')
+        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], passiveAggressive__C=numpy.logspace(0, 2, 4), passiveAggressive__loss=['epsilon_insensitive', 'squared_epsilon_insensitive']), scoring='r2')
         grid_search.fit(X, y)
         acc = grid_search.best_score_
         print grid_search.best_params_
         print grid_search.grid_scores_
-        print "accuracy: " + str(acc)
+        print "r2: " + str(acc)
         return self
 
     def transform(self, X, **transform_params):

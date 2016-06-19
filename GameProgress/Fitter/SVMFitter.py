@@ -18,7 +18,7 @@ class SVMFitter(TransformerMixin):
             ('pca', decomposition.PCA()),
             ('svc', SVC(kernel="rbf", max_iter=-1))
         ])
-        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], svc__C=numpy.logspace(-1, 2, 1)), scoring='accuracy')
+        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], svc__C=numpy.logspace(-1, 1, 2)), scoring='accuracy')
         grid_search.fit(X, y)
         acc = grid_search.best_score_
         y_pred = grid_search.best_estimator_.predict(X)

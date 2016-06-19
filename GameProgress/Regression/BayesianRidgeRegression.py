@@ -26,7 +26,7 @@ class BayesianRidgeRegression(TransformerMixin):
         acc = grid_search.best_score_
         print grid_search.best_params_
         print grid_search.grid_scores_
-        print "accuracy: " + str(acc)
+        print "r2: " + str(acc)
         return self
 
     def transform(self, X, **transform_params):
