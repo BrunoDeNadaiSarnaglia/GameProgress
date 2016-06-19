@@ -1,3 +1,5 @@
+from pandas import DataFrame
+
 __author__ = 'Bruno'
 
 import csv
@@ -10,9 +12,12 @@ class TrainingData:
         try:
             reader = csv.reader(file)
             iterator = iter(reader)
-            next(iterator)
+            columns = next(iterator)
             for row in iterator:
                 data.append(row)
         finally:
             file.close()
-        return data
+        X = DataFrame(data)
+        print columns
+        X.columns = columns
+        return X
