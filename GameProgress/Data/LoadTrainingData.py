@@ -18,6 +18,5 @@ class TrainingData:
         finally:
             file.close()
         X = DataFrame(data)
-        print columns
         X.columns = columns
         return X
