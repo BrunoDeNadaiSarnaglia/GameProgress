@@ -1,48 +1,78 @@
-import numpy
-from pandas import DataFrame
-from sklearn.pipeline import FeatureUnion
-from sklearn import linear_model, decomposition
-from sklearn.pipeline import Pipeline
-from sklearn.grid_search import GridSearchCV
-from sklearn.metrics import precision_score
-from FinalModel import FinalModel
-from Fitter.NaiveBayesianFitter import NaiveBayesianFitter
-from Fitter.NearestNeighborsFitter import NearestNeighborsFitter
-from Fitter.RandomForestFitter import RandomForestFitter
-from Fitter.RidgeRegression import RidgeRegressionFitter
-from Fitter.SVMFitter import SVMFitter
-from Fitter.SVMFitterBestParameters import SVMFitterBestParameters
-
 from Pipeline.ClassYTransformer import ClassYTransformer
-from Pipeline.ImputerTransformer import ImputerTransformer
 from Pipeline.ColumnNameTransformer import ColumnNameTransformer
 from Pipeline.DateTimeEncoderTransformer import DateTimeEncoderTransformer
 from Pipeline.DeviceEncoderTransformer import DeviceEncoderTransformer
 from Pipeline.FloatTransformer import FloatTransformer
+from Pipeline.ImputerTransformer import ImputerTransformer
 from Pipeline.IntTransformer import IntTransformer
 from Pipeline.NullTransformer import NullTransformer
-from Fitter.LinearRegressionFitter import LinearRegressionFitter
 from Pipeline.RepeaterTransformer import RepeaterTransformer
 from Pipeline.RevenueTransformer import RevenueTransformer
 from Pipeline.UnitsTransformer import UnitsTransformer
-from Data.LoadTrainingData import TrainingData
 from Pipeline.YContinuousImputer import YContinuousImputer
-from Regression.BayesianRidgeRegression import BayesianRidgeRegression
-from Regression.ElasticNetRegression import ElasticNetRegression
-from Regression.LassoRegression import LassoRegression
-from Regression.LassoRegressionBestParameters import LassoRegressionBestParameter
-from Regression.PassiveAggressiveRegressor import PassiveAggressiveRegression
-from Regression.SVRRegression import SVRRegression
 
+__author__ = 'Bruno'
 
+__author__ = 'Bruno'
+import numpy
+from pandas import DataFrame
+from sklearn import preprocessing, decomposition, cross_validation
+from sklearn.base import TransformerMixin
+from sklearn.grid_search import GridSearchCV
+from sklearn.linear_model import Lasso
+from sklearn.pipeline import Pipeline, FeatureUnion
 
+__author__ = 'Bruno'
 
-def main():
-    file = TrainingData()
-    data = file.get()
-    D = DataFrame(data)
-    pipelineX = Pipeline(
-        [
+class FinalModel(TransformerMixin):
+
+    def __init__(self, classificationModel, regressionModel):
+        self.classificationModel = classificationModel
+        self.regressionModel = regressionModel
+
+    def fit(self, D, y=None,*args, **kwargs):
+        X = self.getX(D)
+        y_cont = self.getYCont(D)
+        y_desc = self.getYDesc(D)
+        y_desc_pred = self.classificationModel.fit(X.values, y_desc[0].values)
+        y_cont_pred = self.regressionModel.fit(X.values, y_cont[0].values)
+        return self.join(y_desc_pred, y_cont_pred, y_cont)
+
+    def join(self, y_desc_pred, y_cont_pred, y_cont):
+        result = []
+        for (dp, cp, c) in zip(y_desc_pred, y_cont_pred, y_cont[0].values):
+            if dp == 0:
+                result.append(c)
+            else:
+                result.append(cp)
+        return result
+
+    def transform(self, X, **transform_params):
+        return DataFrame(self.model.predict(X))
+
+    def getY(self, D):
+        pipelineYContinuous = Pipeline([
+            ('NullToNaN', NullTransformer()),
+            ('Continuous', YContinuousImputer())
+        ])
+        return pipelineYContinuous.transform(D)
+
+    def getYCont(self, D):
+        pipelineYContinuous = Pipeline([
+            ('NullToNaN', NullTransformer()),
+            ('Continuous', YContinuousImputer())
+        ])
+        return pipelineYContinuous.transform(D)
+
+    def getYDesc(self, D):
+        pipelineY = Pipeline([
+            ('NullToNaN', NullTransformer()),
+            ('ClassY', ClassYTransformer())
+        ])
+        return pipelineY.transform(D)
+
+    def getX(self, D):
+        pipelineX = Pipeline([
             ('NullToNaN', NullTransformer()),
             ('featureType', FeatureUnion([
                 ('revenue', RevenueTransformer()),
@@ -75,34 +105,6 @@ def main():
             ('ColumnNames2', ColumnNameTransformer(
                 ['ls_date', 'tsls', 'tbs', 'completed', 'win_rate', 'tries', 'revenue', 'units', 'rating', 'ttp',
                  'total_sessions', 'device', 'tsad']))
-        ]
-    )
-    pipelineY = Pipeline([
-        ('NullToNaN', NullTransformer()),
-        ('ClassY', ClassYTransformer())
-    ])
-
-    X = pipelineX.transform(D)
-    y = pipelineY.transform(D)
-    y_pred = SVMFitterBestParameters().fit(X.values, y[0].values)
-
-
-    pipelineYContinuous = Pipeline([
-        ('NullToNaN', NullTransformer()),
-        ('Continuous', YContinuousImputer())
-    ])
-
-    y_cont = pipelineYContinuous.transform(D)
-    print len(y_cont[0].values)
-    y_cont_pred = LassoRegressionBestParameter().fit(X.values, y_cont[0].values)
-    print y_pred
-    print y_cont_pred
-    y_final = FinalModel(SVMFitterBestParameters(), LassoRegressionBestParameter()).fit(D, None)
-    r = ""
-    for a in y_final:
-        r += str(a) + "\n"
-    with open("Output.csv", "w") as text_file:
-        text_file.write(r)
-
-main()
-
+            ]
+        )
+        return pipelineX.transform(D)
