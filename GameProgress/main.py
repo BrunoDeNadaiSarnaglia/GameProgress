@@ -1,7 +1,16 @@
 import numpy
 from pandas import DataFrame
-from sklearn.base import TransformerMixin
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.pipeline import FeatureUnion
+from sklearn import linear_model, decomposition
+from sklearn.pipeline import Pipeline
+from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import precision_score
+from Fitter.NaiveBayesianFitter import NaiveBayesianFitter
+from Fitter.NearestNeighborsFitter import NearestNeighborsFitter
+from Fitter.RandomForestFitter import RandomForestFitter
+from Fitter.RidgeRegression import RidgeRegressionFitter
+from Fitter.SVMFitter import SVMFitter
+
 from Pipeline.ClassYTransformer import ClassYTransformer
 from Pipeline.ImputerTransformer import ImputerTransformer
 from Pipeline.ColumnNameTransformer import ColumnNameTransformer
@@ -10,15 +19,12 @@ from Pipeline.DeviceEncoderTransformer import DeviceEncoderTransformer
 from Pipeline.FloatTransformer import FloatTransformer
 from Pipeline.IntTransformer import IntTransformer
 from Pipeline.NullTransformer import NullTransformer
+from Fitter.LinearRegressionFitter import LinearRegressionFitter
 from Pipeline.RepeaterTransformer import RepeaterTransformer
 from Pipeline.RevenueTransformer import RevenueTransformer
 from Pipeline.UnitsTransformer import UnitsTransformer
-from sklearn.pipeline import Pipeline, FeatureUnion
 from Data.LoadTrainingData import TrainingData
-from sklearn import linear_model, decomposition, datasets
-from sklearn.pipeline import Pipeline
-from sklearn.grid_search import GridSearchCV
-from sklearn.metrics import precision_score
+
 
 def main():
     file = TrainingData()
@@ -65,21 +71,18 @@ def main():
         ('ClassY', ClassYTransformer())
     ])
     pipelineFit = Pipeline([
-        ('pca', decomposition.PCA()),
-        ('logistic', linear_model.LogisticRegression())
+        ('Fit Union', FeatureUnion([
+            ('NaiveBayesian', NaiveBayesianFitter()),
+            ('Random', RandomForestFitter()),
+            ('Ridge', RidgeRegressionFitter()),
+            ('SVMFitter', SVMFitter()),
+            ('LinearRegression', LinearRegressionFitter()),
+            ('NearestNeighbors', NearestNeighborsFitter())
+        ]))
     ])
     X = pipelineX.transform(D)
     y = pipelineY.transform(D)
-    n_components = [2, 4, 6, 8, 10, 12]
-    Cs = numpy.logspace(-4, 4, 3)
-
-    estimator = GridSearchCV(pipelineFit,
-                             dict(pca__n_components=n_components, logistic__C=Cs))
-    estimator.fit(X.values, y[0].values)
-    print estimator.best_estimator_.score(X, y)
-    y_pred = estimator.best_estimator_.predict(X)
-    print precision_score(y[0].values, y_pred)
-
+    pipelineFit.fit(X.values, y[0].values)
 
 main()
 
