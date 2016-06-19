@@ -10,6 +10,7 @@ from Fitter.NearestNeighborsFitter import NearestNeighborsFitter
 from Fitter.RandomForestFitter import RandomForestFitter
 from Fitter.RidgeRegression import RidgeRegressionFitter
 from Fitter.SVMFitter import SVMFitter
+from Fitter.SVMFitterBestParameters import SVMFitterBestParameters
 
 from Pipeline.ClassYTransformer import ClassYTransformer
 from Pipeline.ImputerTransformer import ImputerTransformer
@@ -24,6 +25,14 @@ from Pipeline.RepeaterTransformer import RepeaterTransformer
 from Pipeline.RevenueTransformer import RevenueTransformer
 from Pipeline.UnitsTransformer import UnitsTransformer
 from Data.LoadTrainingData import TrainingData
+from Pipeline.YContinuousImputer import YContinuousImputer
+from Regression.BayesianRidgeRegression import BayesianRidgeRegression
+from Regression.ElasticNetRegression import ElasticNetRegression
+from Regression.LassoRegression import LassoRegression
+from Regression.PassiveAggressiveRegressor import PassiveAggressiveRegression
+from Regression.SVRRegression import SVRRegression
+
+
 
 
 def main():
@@ -70,19 +79,28 @@ def main():
         ('NullToNaN', NullTransformer()),
         ('ClassY', ClassYTransformer())
     ])
-    pipelineFit = Pipeline([
-        ('Fit Union', FeatureUnion([
-            ('NaiveBayesian', NaiveBayesianFitter()),
-            ('Random', RandomForestFitter()),
-            ('Ridge', RidgeRegressionFitter()),
-            ('SVMFitter', SVMFitter()),
-            ('LinearRegression', LinearRegressionFitter()),
-            ('NearestNeighbors', NearestNeighborsFitter())
-        ]))
-    ])
+
     X = pipelineX.transform(D)
     y = pipelineY.transform(D)
-    pipelineFit.fit(X.values, y[0].values)
+    y_pred = SVMFitterBestParameters().fit(X.values, y[0].values)
+
+    pipelineYContinuous = Pipeline([
+        ('NullToNaN', NullTransformer()),
+        ('Continuous', YContinuousImputer())
+    ])
+
+    pipelineRegression = Pipeline([
+        ('featureType', FeatureUnion([
+            ('PassiveAggressiveRegression', PassiveAggressiveRegression()),
+            ('ElasticNet', ElasticNetRegression()),
+            ('bayesianRidge', BayesianRidgeRegression()),
+            ('Lasso', LassoRegression()),
+            ('svr', SVRRegression()),
+        ]))
+    ])
+    y_cont = pipelineYContinuous.transform(D)
+    pipelineRegression.fit(X.values, y_cont[0].values)
+
 
 main()
 
