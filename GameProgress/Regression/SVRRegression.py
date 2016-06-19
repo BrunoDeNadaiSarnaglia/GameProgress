@@ -18,7 +18,7 @@ class SVRRegression(TransformerMixin):
             ('pca', decomposition.PCA()),
             ('svc', SVR(kernel="rbf", max_iter=-1))
         ])
-        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[1, 2, 4, 6, 8, 10], svc__C=numpy.logspace(-1, 1, 3), svc__gamma=numpy.logspace(-2, 2, 5)), scoring='r2')
+        grid_search = GridSearchCV(pipelineFit, dict(pca__n_components=[4, 6, 8, 10], svc__C=numpy.logspace(-1, 1, 3), svc__gamma=numpy.logspace(-2, 2, 5)), scoring='r2')
         grid_search.fit(X, y)
         acc = grid_search.best_score_
         print grid_search.best_params_
