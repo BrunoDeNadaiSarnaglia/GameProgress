@@ -11,6 +11,7 @@ __author__ = 'Bruno'
 
 class LassoRegressionBestParameter(TransformerMixin):
 
+
     def fit(self, X, y=None,*args, **kwargs):
         print "Lasso"
         X = preprocessing.scale(X)
@@ -25,3 +26,4 @@ class LassoRegressionBestParameter(TransformerMixin):
 
     def transform(self, X, **transform_params):
         return DataFrame(self.model.predict(X))
+
