@@ -36,7 +36,7 @@ class FinalModel(TransformerMixin):
         y_desc = self.getYDesc(D)
         y_desc_pred = self.classificationModel.fit(X.values, y_desc[0].values)
         y_cont_pred = self.regressionModel.fit(X.values, y_cont[0].values)
-        return self.join(y_desc_pred, y_cont_pred, y_cont)
+        return self.join(y_desc_pred, y_cont_pred, self.getY(D))
 
     def join(self, y_desc_pred, y_cont_pred, y_cont):
         result = []
@@ -47,13 +47,14 @@ class FinalModel(TransformerMixin):
                 result.append(cp)
         return result
 
+
     def transform(self, X, **transform_params):
         return DataFrame(self.model.predict(X))
 
     def getY(self, D):
         pipelineYContinuous = Pipeline([
             ('NullToNaN', NullTransformer()),
-            ('Continuous', YContinuousImputer())
+            ('Continuous', ImputerTransformer('completed', 'mean'))
         ])
         return pipelineYContinuous.transform(D)
 

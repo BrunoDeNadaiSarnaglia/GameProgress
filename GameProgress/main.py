@@ -1,10 +1,13 @@
 import numpy
 from pandas import DataFrame
+from sklearn.linear_model import Lasso
 from sklearn.pipeline import FeatureUnion
-from sklearn import linear_model, decomposition
+from sklearn import linear_model, decomposition, preprocessing
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import precision_score
+from sklearn.svm import SVC
+from Data.LoadTestData import TestData
 from FinalModel import FinalModel
 from Fitter.NaiveBayesianFitter import NaiveBayesianFitter
 from Fitter.NearestNeighborsFitter import NearestNeighborsFitter
@@ -40,7 +43,11 @@ from Regression.SVRRegression import SVRRegression
 def main():
     file = TrainingData()
     data = file.get()
-    D = DataFrame(data)
+    DTraining = DataFrame(data)
+    file = TestData()
+    data = file.get()
+    DTest = DataFrame(data)
+
     pipelineX = Pipeline(
         [
             ('NullToNaN', NullTransformer()),
@@ -82,25 +89,46 @@ def main():
         ('ClassY', ClassYTransformer())
     ])
 
-    X = pipelineX.transform(D)
-    y = pipelineY.transform(D)
-    y_pred = SVMFitterBestParameters().fit(X.values, y[0].values)
+    X = pipelineX.transform(DTraining)
+    y = pipelineY.transform(DTraining)
+    pipelineSVC = Pipeline([
+        ('pca', decomposition.PCA(n_components=8)),
+        ('svc', SVC(kernel="rbf", max_iter=-1, C=0.1))
+    ])
 
+    svc =SVC(kernel="rbf", max_iter=-1, C=0.1)
+    y_pred = svc.fit(X.values, y[0].values)
 
     pipelineYContinuous = Pipeline([
         ('NullToNaN', NullTransformer()),
         ('Continuous', YContinuousImputer())
     ])
 
-    y_cont = pipelineYContinuous.transform(D)
-    print len(y_cont[0].values)
-    y_cont_pred = LassoRegressionBestParameter().fit(X.values, y_cont[0].values)
-    print y_pred
-    print y_cont_pred
-    y_final = FinalModel(SVMFitterBestParameters(), LassoRegressionBestParameter()).fit(D, None)
+    y_cont = pipelineYContinuous.transform(DTraining)
+    pipelineLasso = Pipeline([
+        ('pca', decomposition.PCA(n_components=4)),
+        ('lasso', Lasso(alpha=0.1))
+    ])
+
+    lasso = Lasso(alpha=0.1)
+    y_cont_pred = lasso.fit(X.values, y_cont[0].values)
+
+
+
+    pipelineYContinuous2 = Pipeline([
+        ('NullToNaN', NullTransformer()),
+        ('completed', ImputerTransformer('completed', 'mean'))
+    ])
+
+    X_test = pipelineX.transform(DTest)
+    # X_test = preprocessing.scale(X_test)
+    y_test_cont = pipelineYContinuous2.transform(DTest)
+    y_test_pred_desc = svc.predict(X_test)
+    y_test_cont_pred = lasso.predict(X_test)
+
     r = ""
-    for a in y_final:
-        r += str(a) + "\n"
+    for (a, b, c) in zip(y_test_cont, y_test_pred_desc, y_test_cont_pred):
+        r += str(a[0]) + "," + str(b) + "," + str(c) + "\n"
     with open("Output.csv", "w") as text_file:
         text_file.write(r)
 
